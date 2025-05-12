@@ -9,26 +9,25 @@ st.title("🔋 Hugo's tooltje - Terugverdientijd Homewizard Thuisbatterij")
 col1, col2 = st.columns(2)
 
 with col1:
-    aanschafprijs = st.number_input("Batterijprijs (€)", value=1495)
-    capaciteit_kWh = st.number_input("Capaciteit batterij (kWh)", value=2.7)
-    laadvermogen_W = st.number_input("Laad-/ontlaadvermogen (W)", value=800)
+    aanschafprijs = st.number_input("Batterijprijs (€)", value=1495, min_value=0.0)
+    capaciteit_kWh = st.number_input("Capaciteit batterij (kWh)", value=2.7, min_value=0.0)
+    laadvermogen_W = st.number_input("Laad-/ontlaadvermogen (W)", value=800, min_value=0)
     looptijd_jaren = st.slider("Simulatieperiode (jaren)", 1, 25, 15)
     saldering_eindjaar = st.slider("Jaar waarin salderingsregeling stopt", 2024, 2035, 2027)
 
 with col2:
-    terugleververgoeding = st.number_input("Terugleververgoeding per kWh (€)", value=0.09)
-    stroomprijs = st.number_input("Stroomprijs per kWh (incl. belasting, €)", value=0.40)
-    jaarlijkse_opwek = st.number_input("Jaarlijkse zonnepaneelopwekking (kWh)", value=4704)
-    jaarlijks_verbruik = st.number_input("Jaarlijks stroomverbruik (kWh)", value=2069)
+    terugleververgoeding = st.number_input("Terugleververgoeding per kWh (€)", value=0.09, min_value=0.0)
+    stroomprijs = st.number_input("Stroomprijs per kWh (incl. belasting, €)", value=0.40, min_value=0.0)
+    jaarlijkse_opwek = st.number_input("Jaarlijkse zonnepaneelopwekking (kWh)", value=4704, min_value=0.0)
+    jaarlijks_verbruik = st.number_input("Jaarlijks stroomverbruik (kWh)", value=2069, min_value=0.0)
 #    belasting_meerekenen = st.checkbox("Energiebelasting meerekenen", value=True)
 
 weergave_periode = st.radio("Toon resultaten per", ["Jaar", "Maand"])
 
 # --- Berekeningen ---
-verbruik_zonder_batterij = jaarlijks_verbruik
-overschot_opwek = jaarlijkse_opwek - verbruik_zonder_batterij
+verbruik_zonder_batterij = jaarlijkse_verbruik
+overschot_opwek = max(jaarlijkse_opwek - verbruik_zonder_batterij, 0)
 zelfgebruik_met_batterij = min(overschot_opwek, capaciteit_kWh * 365)
-
 
 # DataFrame om resultaat op te slaan
 data = []
@@ -39,8 +38,8 @@ for jaar in range(looptijd_jaren):
     huidig_jaar = 2024 + jaar
     saldering_geldig = huidig_jaar < saldering_eindjaar
 
-    voordeel_per_kWh = 0 if saldering_geldig else stroomprijs - terugleververgoeding
-    jaarlijkse_besparing = zelfgebruik_met_batterij * voordeel_per_kWh if not saldering_geldig else zelfgebruik_met_batterij * 0.01
+    voordeel_per_kWh = stroomprijs - terugleververgoeding if not saldering_geldig else stroomprijs * 0.01
+    jaarlijkse_besparing = zelfgebruik_met_batterij * voordeel_per_kWh
 
     cumulatieve_besparing += jaarlijkse_besparing
     nog_terug = max(aanschafprijs - cumulatieve_besparing, 0)
@@ -58,7 +57,6 @@ for jaar in range(looptijd_jaren):
         terugverdienjaar = huidig_jaar
 
 result_df = pd.DataFrame(data)
-
 
 # --- Resultaten samenvatting ---
 if terugverdiend:
@@ -84,7 +82,7 @@ else:
             })
     maand_df = pd.DataFrame(maand_data)
     st.dataframe(maand_df, use_container_width=True)
-    
+
 # --- Grafieken ---
 st.subheader("📈 Terugverdientijd & Besparingsoverzicht")
 fig, ax = plt.subplots(figsize=(10,5))
@@ -94,5 +92,7 @@ ax.set_ylabel("Euro")
 ax.set_xlabel("Jaar")
 ax.legend()
 st.pyplot(fig)
+plt.close(fig)
+
 # --- Downloadoptie ---
-st.download_button("📥 Download resultaten als CSV", result_df.to_csv(index=False), file_name="batterij_terugverdientijd.csv")
+st.download_button("📥 Download resultaten als CSV", result_df.to_csv(index=False, encoding='utf-8-sig'), file_name="batterij_terugverdientijd.csv")
