@@ -1,70 +1,99 @@
 import streamlit as st
-from datetime import date
+import pandas as pd
+import matplotlib.pyplot as plt
 
-st.title("HomeWizard Thuisbatterij – Terugverdienmodel")
-st.markdown("""
-Dit model helpt je bepalen hoe snel je een HomeWizard thuisbatterij terugverdient.
-Je kunt het aantal batterijen, gebruiksdagen, energieprijzen en meer aanpassen.
-""")
+# --- Parameters ---
+st.set_page_config(layout="wide")
+st.title("🔋 Terugverdientijd Homewizard Thuisbatterij")
 
-st.sidebar.header("Instellingen")
+col1, col2 = st.columns(2)
 
-# Batterijconfiguratie
-num_batterijen = st.sidebar.slider("Aantal batterijen", 1, 3, 1)
-capaciteit_per_batterij = 2.7  # kWh
-vermogen_per_batterij = 0.8  # kW
+with col1:
+    aanschafprijs = st.number_input("Batterijprijs (€)", value=1495)
+    capaciteit_kWh = st.number_input("Capaciteit batterij (kWh)", value=2.7)
+    laadvermogen_W = st.number_input("Laad-/ontlaadvermogen (W)", value=800)
+    looptijd_jaren = st.slider("Simulatieperiode (jaren)", 1, 25, 15)
+    saldering_eindjaar = st.slider("Jaar waarin salderingsregeling stopt", 2024, 2035, 2027)
 
-# Gebruik en prijsinstellingen
-dagen_gebruik = st.sidebar.selectbox("Aantal dagen per jaar dat de batterij effectief wordt benut", [120, 180, 240, 300], index=1)
-stroomprijs_excl = st.sidebar.number_input("Stroomprijs excl. belasting (€ per kWh)", value=0.25, min_value=0.0, step=0.01)
-terugleververgoeding = st.sidebar.number_input("Terugleververgoeding (€ per kWh)", value=0.10, min_value=0.0, step=0.01)
-batterijprijs = st.sidebar.number_input("Aanschafprijs per batterij (€)", value=1495.0, min_value=0.0, step=50.0)
+with col2:
+    terugleververgoeding = st.number_input("Terugleververgoeding per kWh (€)", value=0.09)
+    stroomprijs = st.number_input("Stroomprijs per kWh (incl. belasting, €)", value=0.40)
+    jaarlijkse_opwek = st.number_input("Jaarlijkse zonnepaneelopwekking (kWh)", value=4704)
+    jaarlijks_verbruik = st.number_input("Jaarlijks stroomverbruik (kWh)", value=2069)
+    belasting_meerekenen = st.checkbox("Energiebelasting meerekenen", value=True)
 
-# Energiebelasting
-inclusief_energiebelasting = st.sidebar.checkbox("Energiebelasting meenemen", value=True)
-energiebelasting = 0.15 if inclusief_energiebelasting else 0.0
-stroomprijs = stroomprijs_excl + energiebelasting
+weergave_periode = st.radio("Toon resultaten per", ["Jaar", "Maand"])
 
-# Salderingsregeling
-salderingsregeling_actief = st.sidebar.checkbox("Salderingsregeling actief", value=True)
-saldering_einde_datum = st.sidebar.date_input("Einddatum salderingsregeling", value=date(2025, 1, 1))
-vandaag = date.today()
+# --- Berekeningen ---
+verbruik_zonder_batterij = jaarlijks_verbruik
+overschot_opwek = jaarlijkse_opwek - verbruik_zonder_batterij
+zelfgebruik_met_batterij = min(overschot_opwek, capaciteit_kWh * 365)
 
-# Berekeningen
-dagelijkse_opslag = capaciteit_per_batterij * num_batterijen
-jaarlijkse_besparing_kWh = dagelijkse_opslag * dagen_gebruik
 
-# Toepassen salderingsregeling
-als_salderen = salderingsregeling_actief and vandaag < saldering_einde_datum
-besparing_per_kWh = stroomprijs if als_salderen else (stroomprijs - terugleververgoeding)
-jaarlijkse_besparing_euro = jaarlijkse_besparing_kWh * besparing_per_kWh
+# DataFrame om resultaat op te slaan
+data = []
+terugverdiend = False
+cumulatieve_besparing = 0
 
-totale_kosten = batterijprijs * num_batterijen
-terugverdientijd = totale_kosten / jaarlijkse_besparing_euro if jaarlijkse_besparing_euro > 0 else float("inf")
+for jaar in range(looptijd_jaren):
+    huidig_jaar = 2024 + jaar
+    saldering_geldig = huidig_jaar < saldering_eindjaar
 
-# Resultaten
-st.subheader("Resultaten")
-st.write(f"📦 Totale batterijcapaciteit: **{dagelijkse_opslag:.2f} kWh per dag**")
-st.write(f"📆 Jaarlijkse benutting: **{jaarlijkse_besparing_kWh:.0f} kWh**")
-st.write(f"💸 Jaarlijkse besparing: **€{jaarlijkse_besparing_euro:,.2f}**")
-st.write(f"⏳ Terugverdientijd: **{terugverdientijd:.1f} jaar**")
+    voordeel_per_kWh = 0 if saldering_geldig else stroomprijs - terugleververgoeding
+    jaarlijkse_besparing = zelfgebruik_met_batterij * voordeel_per_kWh if not saldering_geldig else zelfgebruik_met_batterij * 0.01
 
-# Scenario-analyse
-st.subheader("Scenario-analyse")
-st.markdown("Besparing per jaar bij verschillende gebruiksdagen:")
+    cumulatieve_besparing += jaarlijkse_besparing
+    nog_terug = max(aanschafprijs - cumulatieve_besparing, 0)
 
-scenario_output = ""
-for dagen in [120, 180, 240, 300]:
-    besparing = capaciteit_per_batterij * num_batterijen * dagen * besparing_per_kWh
-    terugverdientijd_scenario = totale_kosten / besparing if besparing > 0 else float("inf")
-    scenario_output += f"- **{dagen} dagen/jaar**: €{besparing:,.2f} besparing – {terugverdientijd_scenario:.1f} jaar terugverdientijd\n"
+    data.append({
+        "Jaar": huidig_jaar,
+        "Besparing (€)": jaarlijkse_besparing,
+        "Cumulatief (€)": cumulatieve_besparing,
+        "Nog te verdienen (€)": nog_terug,
+        "Saldering?": "Ja" if saldering_geldig else "Nee"
+    })
 
-st.markdown(scenario_output)
+    if not terugverdiend and cumulatieve_besparing >= aanschafprijs:
+        terugverdiend = True
+        terugverdienjaar = huidig_jaar
 
-# Debug info (optioneel)
-with st.expander("ℹ️ Details en parameters"):
-    st.write(f"Stroomprijs incl. belasting: €{stroomprijs:.2f}/kWh")
-    st.write(f"Energiebelasting actief: {'Ja' if inclusief_energiebelasting else 'Nee'}")
-    st.write(f"Saldering actief: {'Ja' if als_salderen else 'Nee'}")
-    st.write(f"Datum vandaag: {vandaag}")
-    st.write(f"Einde saldering: {saldering_einde_datum}")
+result_df = pd.DataFrame(data)
+
+# --- Grafieken ---
+st.subheader("📈 Terugverdientijd & Besparingsoverzicht")
+fig, ax = plt.subplots(figsize=(10,5))
+ax.plot(result_df['Jaar'], result_df['Cumulatief (€)'], label='Cumulatieve besparing')
+ax.axhline(aanschafprijs, color='r', linestyle='--', label='Aanschafprijs')
+ax.set_ylabel("Euro")
+ax.set_xlabel("Jaar")
+ax.legend()
+st.pyplot(fig)
+
+# --- Resultaten samenvatting ---
+if terugverdiend:
+    st.success(f"✅ De batterij is terugverdiend in het jaar {terugverdienjaar}.")
+else:
+    st.warning("⚠️ De batterij is nog niet terugverdiend binnen de gekozen looptijd.")
+
+# --- Detailweergave ---
+st.subheader("📋 Gedetailleerde resultaten")
+if weergave_periode == "Jaar":
+    st.dataframe(result_df, use_container_width=True)
+else:
+    maand_data = []
+    for _, row in result_df.iterrows():
+        for m in range(12):
+            maand_data.append({
+                "Jaar": row['Jaar'],
+                "Maand": m+1,
+                "Besparing (€)": row['Besparing (€)']/12,
+                "Cumulatief (€)": row['Cumulatief (€)'] * ((m+1)/12),
+                "Nog te verdienen (€)": max(aanschafprijs - row['Cumulatief (€)'] * ((m+1)/12), 0),
+                "Saldering?": row['Saldering?']
+            })
+    maand_df = pd.DataFrame(maand_data)
+    st.dataframe(maand_df, use_container_width=True)
+
+# --- Downloadoptie ---
+st.download_button("📥 Download resultaten als CSV", result_df.to_csv(index=False), file_name="batterij_terugverdientijd.csv")
+
