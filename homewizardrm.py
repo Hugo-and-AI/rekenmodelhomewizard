@@ -93,6 +93,15 @@ else:
             })
     maand_df = pd.DataFrame(maand_data)
     st.dataframe(maand_df, use_container_width=True)
-
+    
+# --- Grafieken ---
+st.subheader("📈 Terugverdientijd & Besparingsoverzicht")
+fig, ax = plt.subplots(figsize=(10,5))
+ax.plot(result_df['Jaar'], result_df['Cumulatief (€)'], label='Cumulatieve besparing')
+ax.axhline(aanschafprijs, color='r', linestyle='--', label='Aanschafprijs')
+ax.set_ylabel("Euro")
+ax.set_xlabel("Jaar")
+ax.legend()
+st.pyplot(fig)
 # --- Downloadoptie ---
 st.download_button("📥 Download resultaten als CSV", result_df.to_csv(index=False), file_name="batterij_terugverdientijd.csv")
