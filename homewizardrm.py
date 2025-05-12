@@ -59,15 +59,6 @@ for jaar in range(looptijd_jaren):
 
 result_df = pd.DataFrame(data)
 
-# --- Grafieken ---
-st.subheader("📈 Terugverdientijd & Besparingsoverzicht")
-fig, ax = plt.subplots(figsize=(10,5))
-ax.plot(result_df['Jaar'], result_df['Cumulatief (€)'], label='Cumulatieve besparing')
-ax.axhline(aanschafprijs, color='r', linestyle='--', label='Aanschafprijs')
-ax.set_ylabel("Euro")
-ax.set_xlabel("Jaar")
-ax.legend()
-st.pyplot(fig)
 
 # --- Resultaten samenvatting ---
 if terugverdiend:
