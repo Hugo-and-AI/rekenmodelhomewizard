@@ -20,7 +20,7 @@ with col2:
     stroomprijs = st.number_input("Stroomprijs per kWh (incl. belasting, €)", value=0.40)
     jaarlijkse_opwek = st.number_input("Jaarlijkse zonnepaneelopwekking (kWh)", value=4704)
     jaarlijks_verbruik = st.number_input("Jaarlijks stroomverbruik (kWh)", value=2069)
-    belasting_meerekenen = st.checkbox("Energiebelasting meerekenen", value=True)
+#    belasting_meerekenen = st.checkbox("Energiebelasting meerekenen", value=True)
 
 weergave_periode = st.radio("Toon resultaten per", ["Jaar", "Maand"])
 
