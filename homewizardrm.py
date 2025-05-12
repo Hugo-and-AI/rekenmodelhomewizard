@@ -10,22 +10,22 @@ st.title("🔋 Hugo's tooltje - Terugverdientijd Homewizard Thuisbatterij")
 col1, col2 = st.columns(2)
 
 with col1:
-    batterij_aanschafprijs = st.number_input("Prijs per batterij (€)", value=1495.0, min_value=0.0)
+    batterij_aanschafprijs = st.number_input("Prijs per batterij (€)", value=1495.00, min_value=0.00, format="%.2f")
     capaciteit_per_batterij_kWh = st.number_input("Capaciteit per batterij (kWh)", value=2.7, min_value=0.0)
-    laadvermogen_per_batterij_W = st.number_input("Laad-/ontlaadvermogen per batterij (W)", value=800.0, min_value=0.0)
+    laadvermogen_per_batterij_W = st.number_input("Laad-/ontlaadvermogen per batterij (W)", value=800.00, min_value=0.00, format="%.2f")
     aantal_batterijen = st.slider("Aantal batterijen", 1, 4, 1)
-    installatiekosten_extra = st.number_input("Extra installatiekosten bij meer dan 2 batterijen (€)", value=500.0, min_value=0.0)
+    installatiekosten_extra = st.number_input("Extra installatiekosten bij meer dan 2 batterijen (€)", value=500.00, min_value=0.00, format="%.2f")
     looptijd_jaren = st.slider("Simulatieperiode (jaren)", 1, 25, 15)
 
 with col2:
-    terugleververgoeding = st.number_input("Terugleververgoeding per kWh (€)", value=0.09, min_value=0.0)
-    stroomprijs = st.number_input("Stroomprijs per kWh (incl. belasting, €)", value=0.40, min_value=0.0)
+    terugleververgoeding = st.number_input("Terugleververgoeding per kWh (€)", value=0.09, min_value=0.00, format="%.2f")
+    stroomprijs = st.number_input("Stroomprijs per kWh (incl. belasting, €)", value=0.40, min_value=0.00, format="%.2f")
     jaarlijkse_opwek = st.number_input("Jaarlijkse zonnepaneelopwekking (kWh)", value=4704.0, min_value=0.0)
     jaarlijks_verbruik = st.number_input("Jaarlijks stroomverbruik (kWh)", value=2069.0, min_value=0.0)
     efficiency_percentage = st.slider("Efficiëntie van het systeem (%)", 50, 100, 90)
 
 # Radiobutton for salderingsregeling
-saldering_regeling = st.radio("Stopt salderingsregeling?", ["Ja", "Nee"])
+saldering_regeling = st.radio("Stopt salderingsregeling?", ["Ja", "Nee"], index=0)  # Default set to "Ja"
 if saldering_regeling == "Ja":
     saldering_eindjaar = st.slider("Jaar waarin salderingsregeling stopt", 2024, 2035, 2027)
 else:
@@ -69,9 +69,9 @@ for jaar in range(looptijd_jaren):
 
     data.append({
         "Jaar": huidig_jaar,
-        "Besparing (€)": jaarlijkse_besparing,
-        "Cumulatief (€)": cumulatieve_besparing,
-        "Nog te verdienen (€)": nog_terug,
+        "Besparing (€)": f"€ {jaarlijkse_besparing:,.2f}",
+        "Cumulatief (€)": f"€ {cumulatieve_besparing:,.2f}",
+        "Nog te verdienen (€)": f"€ {nog_terug:,.2f}",
         "Saldering?": "Ja" if saldering_geldig else "Nee"
     })
 
@@ -98,9 +98,9 @@ else:
             maand_data.append({
                 "Jaar": row['Jaar'],
                 "Maand": m+1,
-                "Besparing (€)": row['Besparing (€)']/12,
-                "Cumulatief (€)": row['Cumulatief (€)'] * ((m+1)/12),
-                "Nog te verdienen (€)": max(totale_aanschafprijs - row['Cumulatief (€)'] * ((m+1)/12), 0),
+                "Besparing (€)": f"€ {float(row['Besparing (€)'][2:].replace(',', ''))/12:,.2f}",
+                "Cumulatief (€)": f"€ {float(row['Cumulatief (€)'][2:].replace(',', '')) * ((m+1)/12):,.2f}",
+                "Nog te verdienen (€)": f"€ {max(totale_aanschafprijs - float(row['Cumulatief (€)'][2:].replace(',', '')) * ((m+1)/12), 0):,.2f}",
                 "Saldering?": row['Saldering?']
             })
     maand_df = pd.DataFrame(maand_data)
@@ -114,7 +114,8 @@ sns.set_theme(style="whitegrid")
 fig, ax = plt.subplots(figsize=(12, 6))
 
 # Plot cumulative savings as a bar chart
-ax.bar(result_df['Jaar'], result_df['Cumulatief (€)'], label='Cumulatieve besparing', color='green')
+cumulatief_values = [float(value[2:].replace(',', '')) for value in result_df['Cumulatief (€)']]
+ax.bar(result_df['Jaar'], cumulatief_values, label='Cumulatieve besparing', color='green')
 
 # Add horizontal line for total battery price
 ax.axhline(totale_aanschafprijs, color='red', linestyle='--', label='Totale aanschafprijs', linewidth=1.5)
@@ -129,7 +130,7 @@ ax.grid(True, which="both", linestyle="--", linewidth=0.5, alpha=0.7)
 ax.legend(fontsize=12)
 
 # Format y-axis with thousands separator
-ax.get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, loc: f"{int(x):,} €"))
+ax.get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, loc: f"€ {x:,.2f}"))
 
 # Display the plot
 st.pyplot(fig)
