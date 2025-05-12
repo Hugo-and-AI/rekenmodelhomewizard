@@ -16,7 +16,6 @@ with col1:
     aantal_batterijen = st.slider("Aantal batterijen", 1, 4, 1)
     installatiekosten_extra = st.number_input("Extra installatiekosten bij meer dan 2 batterijen (€)", value=500.0, min_value=0.0)
     looptijd_jaren = st.slider("Simulatieperiode (jaren)", 1, 25, 15)
-    saldering_eindjaar = st.slider("Jaar waarin salderingsregeling stopt", 2024, 2035, 2027)
 
 with col2:
     terugleververgoeding = st.number_input("Terugleververgoeding per kWh (€)", value=0.09, min_value=0.0)
@@ -24,6 +23,13 @@ with col2:
     jaarlijkse_opwek = st.number_input("Jaarlijkse zonnepaneelopwekking (kWh)", value=4704.0, min_value=0.0)
     jaarlijks_verbruik = st.number_input("Jaarlijks stroomverbruik (kWh)", value=2069.0, min_value=0.0)
     efficiency_percentage = st.slider("Efficiëntie van het systeem (%)", 50, 100, 90)
+
+# Radiobutton for salderingsregeling
+saldering_regeling = st.radio("Stopt salderingsregeling?", ["Ja", "Nee"])
+if saldering_regeling == "Ja":
+    saldering_eindjaar = st.slider("Jaar waarin salderingsregeling stopt", 2024, 2035, 2027)
+else:
+    saldering_eindjaar = None  # Indicates no specific end year; always salderen.
 
 weergave_periode = st.radio("Toon resultaten per", ["Jaar", "Maand"])
 
@@ -50,7 +56,10 @@ cumulatieve_besparing = 0
 
 for jaar in range(looptijd_jaren):
     huidig_jaar = 2024 + jaar
-    saldering_geldig = huidig_jaar < saldering_eindjaar
+    if saldering_regeling == "Nee":
+        saldering_geldig = True  # Always salderen if "Nee" is selected.
+    else:
+        saldering_geldig = huidig_jaar < saldering_eindjaar
 
     voordeel_per_kWh = stroomprijs - terugleververgoeding if not saldering_geldig else stroomprijs * 0.01
     jaarlijkse_besparing = zelfgebruik_met_batterij * voordeel_per_kWh
@@ -98,14 +107,14 @@ else:
     st.dataframe(maand_df, use_container_width=True)
 
 # --- Grafieken ---
-st.subheader("📈 Terugverdientijd & Besparingsoverzicht")
+st.subheader("📊 Terugverdientijd & Besparingsoverzicht")
 
 # Use seaborn for nicer plots
 sns.set_theme(style="whitegrid")
 fig, ax = plt.subplots(figsize=(12, 6))
 
-# Plot cumulative savings
-ax.plot(result_df['Jaar'], result_df['Cumulatief (€)'], label='Cumulatieve besparing', color='green', linewidth=2.5)
+# Plot cumulative savings as a bar chart
+ax.bar(result_df['Jaar'], result_df['Cumulatief (€)'], label='Cumulatieve besparing', color='green')
 
 # Add horizontal line for total battery price
 ax.axhline(totale_aanschafprijs, color='red', linestyle='--', label='Totale aanschafprijs', linewidth=1.5)
