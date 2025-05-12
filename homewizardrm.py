@@ -14,7 +14,10 @@ with col1:
     capaciteit_per_batterij_kWh = st.number_input("Capaciteit per batterij (kWh)", value=2.7, min_value=0.0)
     laadvermogen_per_batterij_W = st.number_input("Laad-/ontlaadvermogen per batterij (W)", value=800.00, min_value=0.00, format="%.2f")
     aantal_batterijen = st.slider("Aantal batterijen", 1, 4, 1)
+    if aantal_batterijen > 2:
     installatiekosten_extra = st.number_input("Extra installatiekosten bij meer dan 2 batterijen (€)", value=500.00, min_value=0.00, format="%.2f")
+    else:
+    installatiekosten_extra = None  # Indicates no specific end year; always salderen. 
     looptijd_jaren = st.slider("Simulatieperiode (jaren)", 1, 25, 15)
 
 with col2:
