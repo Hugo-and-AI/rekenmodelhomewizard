@@ -10,19 +10,19 @@ st.title("🔋 Hugo's tooltje - Terugverdientijd Homewizard Thuisbatterij")
 col1, col2 = st.columns(2)
 
 with col1:
-    batterij_aanschafprijs = st.number_input("Prijs per batterij (€)", value=1495, min_value=0.0)
+    batterij_aanschafprijs = st.number_input("Prijs per batterij (€)", value=1495.0, min_value=0.0)
     capaciteit_per_batterij_kWh = st.number_input("Capaciteit per batterij (kWh)", value=2.7, min_value=0.0)
-    laadvermogen_per_batterij_W = st.number_input("Laad-/ontlaadvermogen per batterij (W)", value=800, min_value=0)
+    laadvermogen_per_batterij_W = st.number_input("Laad-/ontlaadvermogen per batterij (W)", value=800.0, min_value=0.0)
     aantal_batterijen = st.slider("Aantal batterijen", 1, 4, 1)
-    installatiekosten_extra = st.number_input("Extra installatiekosten bij meer dan 2 batterijen (€)", value=500, min_value=0.0)
+    installatiekosten_extra = st.number_input("Extra installatiekosten bij meer dan 2 batterijen (€)", value=500.0, min_value=0.0)
     looptijd_jaren = st.slider("Simulatieperiode (jaren)", 1, 25, 15)
     saldering_eindjaar = st.slider("Jaar waarin salderingsregeling stopt", 2024, 2035, 2027)
 
 with col2:
     terugleververgoeding = st.number_input("Terugleververgoeding per kWh (€)", value=0.09, min_value=0.0)
     stroomprijs = st.number_input("Stroomprijs per kWh (incl. belasting, €)", value=0.40, min_value=0.0)
-    jaarlijkse_opwek = st.number_input("Jaarlijkse zonnepaneelopwekking (kWh)", value=4704, min_value=0.0)
-    jaarlijks_verbruik = st.number_input("Jaarlijks stroomverbruik (kWh)", value=2069, min_value=0.0)
+    jaarlijkse_opwek = st.number_input("Jaarlijkse zonnepaneelopwekking (kWh)", value=4704.0, min_value=0.0)
+    jaarlijks_verbruik = st.number_input("Jaarlijks stroomverbruik (kWh)", value=2069.0, min_value=0.0)
     efficiency_percentage = st.slider("Efficiëntie van het systeem (%)", 50, 100, 90)
 
 weergave_periode = st.radio("Toon resultaten per", ["Jaar", "Maand"])
