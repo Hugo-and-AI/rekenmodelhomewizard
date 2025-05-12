@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 
 # --- Parameters ---
 st.set_page_config(layout="wide")
-st.title("🔋 Hugo's toolje - Terugverdientijd Homewizard Thuisbatterij")
+st.title("🔋 Hugo's tooltje 
+- Terugverdientijd Homewizard Thuisbatterij")
 
 col1, col2 = st.columns(2)
 
