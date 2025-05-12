@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 # --- Parameters ---
 st.set_page_config(layout="wide")
-st.title("🔋 Hugo's tooltje voor Terugverdientijd Homewizard Thuisbatterij")
+st.title("🔋 Terugverdientijd Homewizard Thuisbatterij")
 
 col1, col2 = st.columns(2)
 
@@ -96,4 +96,3 @@ else:
 
 # --- Downloadoptie ---
 st.download_button("📥 Download resultaten als CSV", result_df.to_csv(index=False), file_name="batterij_terugverdientijd.csv")
-
